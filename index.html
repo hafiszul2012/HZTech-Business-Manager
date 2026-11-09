@@ -3,67 +3,120 @@
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HZTECH BUSINESS MANAGER</title>
 <style>
-body{margin:0;background:#101010;color:#fff;font-family:Arial}
-header{background:#171717;padding:22px;color:#d4af37;text-align:center;font-size:23px;font-weight:bold}
-.container{padding:18px}
-.card{background:#202020;padding:18px;margin:12px 0;border-radius:14px;border:1px solid #444}
-button{background:#d4af37;color:#000;border:0;padding:14px;border-radius:9px;font-weight:bold;width:100%;margin:6px 0;font-size:16px}
-input,select{width:100%;padding:13px;margin:7px 0;box-sizing:border-box;background:#333;color:white;border:1px solid #555;border-radius:8px}
+body{background:#111;color:#fff;font-family:Arial;margin:0}
+header{background:#1b1b1b;color:#d4af37;text-align:center;padding:20px;font-size:22px;font-weight:bold}
+.container{padding:15px}
+.card{background:#222;padding:15px;border-radius:12px;margin-bottom:15px}
 h3{color:#d4af37}
+input,select{width:100%;box-sizing:border-box;padding:12px;margin:6px 0;background:#333;color:#fff;border:1px solid #555;border-radius:7px}
+button{width:100%;padding:13px;margin:5px 0;border:0;border-radius:8px;background:#d4af37;color:#000;font-weight:bold}
+table{width:100%;border-collapse:collapse}
+td,th{border:1px solid #ccc;padding:7px;text-align:left}
 </style>
 </head>
 <body>
 <header>HZTECH BUSINESS MANAGER</header>
 <div class="container">
 <div class="card">
-<h3>PILIH SYARIKAT</h3>
+<h3>QUOTATION</h3>
 <select id="company">
 <option>HZTECH GROUP SDN BHD</option>
 <option>MH GROUP ENTERPRISE</option>
 </select>
+<input id="qno" placeholder="Quotation No">
+<input id="date" type="date">
+<input id="customer" placeholder="Nama pelanggan">
+<input id="address" placeholder="Alamat pelanggan">
+<input id="project" placeholder="Nama projek">
 </div>
+
 <div class="card">
-<h3>MENU UTAMA</h3>
-<button onclick="openForm('quotation')">QUOTATION</button>
-<button onclick="openForm('invoice')">INVOICE</button>
-<button onclick="openForm('boq')">CONSTRUCTION BOQ</button>
-<button onclick="openForm('customer')">CUSTOMER</button>
-<button onclick="openForm('project')">PROJECT MANAGEMENT</button>
-<button onclick="openForm('report')">REPORT & PROFIT</button>
+<h3>ITEM KERJA</h3>
+<table id="items">
+<tr><th>Item</th><th>Qty</th><th>Rate RM</th><th>Total</th></tr>
+</table>
+<button onclick="addItem()">+ TAMBAH ITEM</button>
 </div>
-<div id="form"></div>
+
+<div class="card">
+<h3>RINGKASAN</h3>
+<label>Profit (%)</label>
+<input id="profit" type="number" value="0" oninput="calculate()">
+<p>Subtotal: RM <span id="subtotal">0.00</span></p>
+<p>Profit: RM <span id="profitamt">0.00</span></p>
+<h3>Jumlah: RM <span id="grand">0.00</span></h3>
 </div>
+
+<button onclick="savePDF()">CETAK / SAVE PDF</button>
+</div>
+
 <script>
-function openForm(type){
-let title=type.toUpperCase();
-let html='<div class="card"><h3>'+title+'</h3>';
-if(type==='quotation'||type==='invoice'){
-html+='<input placeholder="Nama pelanggan"><input placeholder="No. telefon"><input placeholder="Alamat">';
-html+='<input placeholder="Nama kerja / projek"><input type="number" placeholder="Jumlah RM">';
-html+='<button onclick="saveDoc(\''+type+'\')">SIMPAN</button>';
+let count=0;
+function addItem(){
+count++;
+let r=document.getElementById("items").insertRow();
+r.innerHTML='<td><input placeholder="Item '+count+'"></td>'+
+'<td><input type="number" value="1" min="0" oninput="calculate()"></td>'+
+'<td><input type="number" value="0" min="0" oninput="calculate()"></td>'+
+'<td class="total">0.00</td>';
+calculate();
 }
-if(type==='boq'){
-html+='<input placeholder="Nama projek"><input placeholder="Item kerja">';
-html+='<input type="number" id="cost" placeholder="Kos (RM)"><input type="number" id="profit" placeholder="Profit %">';
-html+='<button onclick="calc()">KIRA HARGA JUAL</button><p id="result"></p>';
+function calculate(){
+let subtotal=0;
+document.querySelectorAll("#items tr").forEach((r,i)=>{
+if(i===0)return;
+let q=Number(r.cells[1].querySelector("input").value||0);
+let rate=Number(r.cells[2].querySelector("input").value||0);
+let total=q*rate;
+r.cells[3].innerText=total.toFixed(2);
+subtotal+=total;
+});
+let p=Number(document.getElementById("profit").value||0);
+let profit=subtotal*p/100;
+document.getElementById("subtotal").innerText=subtotal.toFixed(2);
+document.getElementById("profitamt").innerText=profit.toFixed(2);
+document.getElementById("grand").innerText=(subtotal+profit).toFixed(2);
 }
-if(type==='customer')html+='<input placeholder="Nama pelanggan"><input placeholder="Telefon"><input placeholder="Alamat"><button onclick="alert(\'Fungsi pelanggan akan dibina\')">SIMPAN</button>';
-if(type==='project')html+='<input placeholder="Nama projek"><input placeholder="Lokasi"><input placeholder="Status"><button onclick="alert(\'Fungsi projek akan dibina\')">SIMPAN</button>';
-if(type==='report')html+='<p>Ringkasan keuntungan akan dipaparkan di sini.</p>';
-html+='</div>';
-document.getElementById('form').innerHTML=html;
+function savePDF(){
+let company=document.getElementById("company").value;
+let customer=document.getElementById("customer").value;
+let address=document.getElementById("address").value;
+let project=document.getElementById("project").value;
+let qno=document.getElementById("qno").value;
+let date=document.getElementById("date").value;
+let rows="";
+document.querySelectorAll("#items tr").forEach((r,i)=>{
+if(i===0)return;
+rows+="<tr>"+Array.from(r.cells).map((c,j)=>{
+return "<td>"+(j===0?c.querySelector("input").value:c.innerText)+"</td>";
+}).join("")+"</tr>";
+});
+let win=window.open("","_blank");
+win.document.write(`
+<html><head><title>Quotation ${qno}</title>
+<style>body{font-family:Arial;padding:30px;color:#111}
+h1{color:#b38b20}table{width:100%;border-collapse:collapse;margin-top:20px}
+td,th{border:1px solid #777;padding:8px;text-align:left}
+.right{text-align:right}
+</style></head><body>
+<h1>${company}</h1><h2>QUOTATION</h2>
+<p>Quotation No: ${qno}<br>Date: ${date}</p>
+<p>Customer: ${customer}<br>Address: ${address}<br>Project: ${project}</p>
+<table><tr><th>Item</th><th>Qty</th><th>Rate RM</th><th>Total RM</th></tr>${rows}</table>
+<h3>Subtotal RM ${document.getElementById("subtotal").innerText}</h3>
+<h3>Profit RM ${document.getElementById("profitamt").innerText}</h3>
+<h2>Grand Total RM ${document.getElementById("grand").innerText}</h2>
+<br><br>________________________<br>Authorized Signature
+<script>window.onload=function(){window.print()}<\/script>
+</body></html>`);
+win.document.close();
 }
-function calc(){
-let c=Number(document.getElementById('cost').value);
-let p=Number(document.getElementById('profit').value);
-document.getElementById('result').innerHTML='Harga jual: RM '+(c+c*p/100).toFixed(2);
-}
-function saveDoc(type){
-alert(type.toUpperCase()+' berjaya disimpan (demo).');
-}
+addItem();
+document.getElementById("date").value=new Date().toISOString().slice(0,10);
+document.getElementById("qno").value="QT-"+Date.now().toString().slice(-6);
 </script>
 </body>
 </html>
